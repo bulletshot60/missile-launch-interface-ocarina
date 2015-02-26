@@ -97,6 +97,9 @@ public
 			right_toggle_down: in event port;
 			timer_fire: in event port;
 			launch_missile: out event data port Base_Types::Boolean;
+		annex agree {**
+			guarantee "will launch or not launch missile": launch_missile = true or launch_missile = false;
+		**};
 	end launch_interface_thread;
 	
 	thread implementation launch_interface_thread.impl
@@ -208,14 +211,16 @@ public
 					end if
 				};
 				standby-[on dispatch left_toggle_up]->standby {
-					is_left_toggle_up := true;
-					left_toggle_up_at := counter;
-					if(is_right_toggle_up and (left_toggle_up_at - right_toggle_up_at) <= 5)
-						is_toggle_error := false
-					else
-						if(is_right_toggle_up)
-							is_toggle_error := true;
-							errored_at := counter
+					if(not (is_toggle_error or is_button_error))
+						is_left_toggle_up := true;
+						left_toggle_up_at := counter;
+						if(is_right_toggle_up and (left_toggle_up_at - right_toggle_up_at) <= 5)
+							is_toggle_error := false
+						else
+							if(is_right_toggle_up)
+								is_toggle_error := true;
+								errored_at := counter
+							end if
 						end if
 					end if
 				};
@@ -223,14 +228,16 @@ public
 					is_left_toggle_up := false
 				};
 				standby-[on dispatch right_toggle_up]->standby {
-					is_right_toggle_up := true;
-					right_toggle_up_at := counter
-					if(is_left_toggle_up and (right_toggle_up_at - left_toggle_up_at) <= 5)
-						is_toggle_error := false
-					else
-						if(is_left_toggle_up)
-							is_toggle_error := true;
-							errored_at := counter
+					if(not (is_toggle_error or is_button_error))
+						is_right_toggle_up := true;
+						right_toggle_up_at := counter
+						if(is_left_toggle_up and (right_toggle_up_at - left_toggle_up_at) <= 5)
+							is_toggle_error := false
+						else
+							if(is_left_toggle_up)
+								is_toggle_error := true;
+								errored_at := counter
+							end if
 						end if
 					end if
 				};
@@ -238,15 +245,18 @@ public
 					is_right_toggle_up := false
 				};
 				standby-[on dispatch left_button_pressed]->standby {
-					is_right_button_pressed := true;
-					left_button_pressed_at := counter
-					if(is_left_toggle_up and is_right_toggle_up)
-						if(is_right_button_pressed and (left_button_pressed_at - right_button_pressed_at) <= 5)
-							is_button_error := false
-						else
-							if(is_right_button_pressed)
-								is_button_error := true;
-								errored_at := counter
+					if(not (is_toggle_error or is_button_error))
+						is_right_button_pressed := true;
+						left_button_pressed_at := counter
+						if(is_left_toggle_up and is_right_toggle_up)
+							if(is_right_button_pressed and (left_button_pressed_at - right_button_pressed_at) <= 5)
+								is_button_error := false;
+								launch_missle := true
+							else
+								if(is_right_button_pressed)
+									is_button_error := true;
+									errored_at := counter
+								end if
 							end if
 						end if
 					end if
@@ -255,15 +265,18 @@ public
 					is_right_button_pressed := false
 				};
 				standby-[on dispatch right_button_pressed]->standby {
-					is_right_button_pressed := true;
-					right_button_pressed_at := counter
-					if(is_left_toggle_up and is_right_toggle_up)
-						if(is_left_button_pressed and (right_button_pressed_at - left_button_pressed_at) <= 5)
-							is_button_error := false
-						else
-							if(is_left_button_pressed)
-								is_button_error := true;
-								errored_at := counter
+					if(not (is_toggle_error or is_button_error))
+						is_right_button_pressed := true;
+						right_button_pressed_at := counter
+						if(is_left_toggle_up and is_right_toggle_up)
+							if(is_left_button_pressed and (right_button_pressed_at - left_button_pressed_at) <= 5)
+								is_button_error := false;
+								launch_missle := true
+							else
+								if(is_left_button_pressed)
+									is_button_error := true;
+									errored_at := counter
+								end if
 							end if
 						end if
 					end if
