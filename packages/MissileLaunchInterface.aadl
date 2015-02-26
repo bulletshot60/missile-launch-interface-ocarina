@@ -1,0 +1,245 @@
+package missile_launch_interface
+public
+	with Base_Types;
+	
+	--////////////////////////////////////////////////
+	-- start devices
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	device toggle_switch
+		features
+			toggled_up: out event port;
+			toggled_down: out event port;
+		flows
+			flow1: flow source toggled_up;
+			flow2: flow source toggled_down;
+	end toggle_switch;
+	
+	device implementation toggle_switch.impl
+		flows
+			flow1: flow source toggled_up;
+			flow2: flow source toggled_down;
+	end toggle_switch.impl;
+	
+	device button
+		features
+			pressed: out event port;
+			released: out event port;
+		flows
+			flow1: flow source pressed;
+			flow2: flow source released;
+	end button;
+	
+	device implementation button.impl
+		flows
+			flow1: flow source pressed;
+			flow2: flow source released;		
+	end button.impl;
+	
+	--////////////////////////////////////////////////
+	-- end devices
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	--////////////////////////////////////////////////
+	-- start subprograms
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	subprogram determine_if_launch
+		features
+			left_toggle_up: in event port;
+			left_toggle_down: in event port;
+			left_button_pressed: in event port;
+			left_button_released: in event port;
+			right_button_pressed: in event port;
+			right_button_released: in event port;
+			right_toggle_up: in event port;
+			right_toggle_down: in event port;
+			timer_fire: in event port;
+			launch_missile: out event data port Base_Types::Boolean;
+	end determine_if_launch;
+	
+	subprogram implementation determine_if_launch.impl
+		
+	end determine_if_launch.impl;
+	
+	--////////////////////////////////////////////////
+	-- end subprograms
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	--////////////////////////////////////////////////
+	-- start threads
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	thread clock_thread
+		features
+			time_interrupt: out event port;
+		flows
+			flow1: flow source time_interrupt;
+		properties
+			Dispatch_Protocol => Periodic;
+			Period => 1ms;
+	end clock_thread;
+	
+	thread implementation clock_thread.impl
+		flows
+			flow1: flow source time_interrupt;
+	end clock_thread.impl;
+	
+	thread launch_interface_thread
+		features
+			left_toggle_up: in event port;
+			left_toggle_down: in event port;
+			left_button_pressed: in event port;
+			left_button_released: in event port;
+			right_button_pressed: in event port;
+			right_button_released: in event port;
+			right_toggle_up: in event port;
+			right_toggle_down: in event port;
+			timer_fire: in event port;
+			launch_missile: out event data port Base_Types::Boolean;
+	end launch_interface_thread;
+	
+	thread implementation launch_interface_thread.impl
+		calls M: {
+			method: subprogram determine_if_launch.impl;
+		};
+		connections
+			event1: port left_toggle_up->method.left_toggle_up;
+			event2: port left_toggle_down->method.left_toggle_down;
+			event3: port left_button_pressed->method.left_button_pressed;
+			event4: port left_button_released->method.left_button_released;
+			event5: port right_button_pressed->method.right_button_pressed;
+			event6: port right_button_released->method.right_button_released;
+			event7: port right_toggle_up->method.right_toggle_up;
+			event8: port right_toggle_down->method.right_toggle_down;
+			event9: port timer_fire->method.timer_fire;
+			event10: port method.launch_missile->launch_missile;
+	end launch_interface_thread.impl;
+	
+	--////////////////////////////////////////////////
+	-- end threads
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	--////////////////////////////////////////////////
+	-- start processes
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+		
+	process clock_process
+		features
+			time_interrupt: out event port;
+		flows
+			flow1: flow source time_interrupt;
+	end clock_process;
+	
+	process implementation clock_process.impl
+		subcomponents
+			time_interrupt_thread: thread clock_thread.impl;
+		connections
+			output1: port time_interrupt_thread.time_interrupt -> time_interrupt;
+		flows
+			flow1: flow source time_interrupt;
+	end clock_process.impl;
+		
+	process launch_interface_process
+		features
+			left_toggle_up: in event port;
+			left_toggle_down: in event port;
+			left_button_pressed: in event port;
+			left_button_released: in event port;
+			right_button_pressed: in event port;
+			right_button_released: in event port;
+			right_toggle_up: in event port;
+			right_toggle_down: in event port;
+			timer_fire: in event port;
+			launch_missile: out event data port Base_Types::Boolean;
+	end launch_interface_process;
+	
+	process implementation launch_interface_process.impl
+		subcomponents
+			launch_interface_thread: thread launch_interface_thread.impl;
+		connections
+			event1: port left_toggle_up->launch_interface_thread.left_toggle_up;
+			event2: port left_toggle_down->launch_interface_thread.left_toggle_down;
+			event3: port left_button_pressed->launch_interface_thread.left_button_pressed;
+			event4: port left_button_released->launch_interface_thread.left_button_released;
+			event5: port right_button_pressed->launch_interface_thread.right_button_pressed;
+			event6: port right_button_released->launch_interface_thread.right_button_released;
+			event7: port right_toggle_up->launch_interface_thread.right_toggle_up;
+			event8: port right_toggle_down->launch_interface_thread.right_toggle_down;
+			event9: port timer_fire->launch_interface_thread.timer_fire;
+			event10: port launch_interface_thread.launch_missile->launch_missile;
+		annex behavior_specification  {**
+			variables
+				counter: Base_Types::Integer;
+			
+				is_left_toggle_up: Base_Types::Boolean;
+				is_right_toggle_up: Base_Types::Boolean;
+				is_toggles_error: Base_Types::Boolean;
+				is_left_button_pressed: Base_Types::Boolean;
+				is_right_button_pressed: Base_Types::Boolean;
+				is_buttons_error: Base_Types::Boolean;
+				
+				left_toggle_up_at: Base_Types::Integer;
+				right_toggle_up_at: Base_Types::Integer;
+				left_button_pressed_at: Base_Types::Integer;
+				right_button_pressed_at: Base_Types::Integer;
+			states
+				start: initial state;
+				standby: complete state;
+			transitions
+				start-[]->standby {
+					counter := 0;
+					is_left_toggle_up := false;
+					is_right_toggle_up := false;
+					is_toggles_error := false;
+					is_left_button_pressed := false;
+					is_right_button_pressed := false;
+					is_buttons_error := false
+				};
+				standby-[]->standby;
+		**};
+	end launch_interface_process.impl;
+	
+	--////////////////////////////////////////////////
+	-- end processes
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	--////////////////////////////////////////////////
+	-- start systems
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	system launch_interface_system
+		features
+			launch_missile: out event data port Base_Types::Boolean;
+			error: out event data port Base_Types::Boolean;
+		annex agree {**
+			guarantee "will launch or not launch missile": launch_missile = true or launch_missile = false;
+		**};
+	end launch_interface_system;
+	
+	system implementation launch_interface_system.impl
+		subcomponents
+			clock_process: process clock_process.impl;
+			left_toggle: device toggle_switch.impl;
+			left_button: device button.impl;
+			right_button: device button.impl;
+			right_toggle: device toggle_switch.impl;
+			launch_interface_process: process launch_interface_process.impl;
+		connections
+			event1: port left_toggle.toggled_up->launch_interface_process.left_toggle_up;
+			event2: port left_toggle.toggled_down->launch_interface_process.left_toggle_down;
+			event3: port left_button.pressed->launch_interface_process.left_button_pressed;
+			event4: port left_button.released->launch_interface_process.left_button_released;
+			event5: port right_button.pressed->launch_interface_process.right_button_pressed;
+			event6: port right_button.released->launch_interface_process.right_button_released;
+			event7: port right_toggle.toggled_up->launch_interface_process.right_toggle_up;
+			event8: port right_toggle.toggled_down->launch_interface_process.right_toggle_down;
+			event9: port clock_process.time_interrupt->launch_interface_process.timer_fire;
+			event10: port launch_interface_process.launch_missile->launch_missile;
+	end launch_interface_system.impl;
+	
+	--////////////////////////////////////////////////
+	-- end systems
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+end missile_launch_interface;
