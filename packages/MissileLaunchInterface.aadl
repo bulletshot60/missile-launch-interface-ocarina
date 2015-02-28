@@ -6,6 +6,34 @@ public
 	-- start devices
 	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	
+	annex Resolute {**
+		instantiation_is_reachable(source_component : component, destination_component : component) <= **"proves that component" source_component " can reach component " destination_component**
+			exists (c : reachable({source_component})) .
+				c = destination_component
+			
+		reachable(c : {component}) : {component} =
+			let next : {component} = union(c, next_reachable(c));
+			if c = next then 
+				c
+			else
+				reachable(next)
+			
+		next_reachable(c : {component}) : {component} = 
+			{y for (x : c) (y : reachable_components(x))}
+			
+		reachable_components(c : component) : {component} = 
+			{y for (conn : connections(c)) (y : components_on_connection(c, conn))}
+			
+		components_on_connection(c : component, conn : connection) : {component} = 
+			if is_port_connection(conn) then
+				if source_component(conn) = c then
+					{destination_component(conn)}
+				else
+					{}
+			else
+				{}
+	**};
+	
 	device toggle_switch
 		features
 			toggled_up: out event port;
@@ -19,6 +47,9 @@ public
 		flows
 			flow1: flow source toggled_up;
 			flow2: flow source toggled_down;
+		annex Resolute {**
+			prove(instantiation_is_reachable(this, instance(launch_interface_thread)))
+		**};
 	end toggle_switch.impl;
 	
 	device button
@@ -33,7 +64,10 @@ public
 	device implementation button.impl
 		flows
 			flow1: flow source pressed;
-			flow2: flow source released;		
+			flow2: flow source released;
+		annex Resolute {**
+			prove(instantiation_is_reachable(this, instance(launch_interface_thread)))
+		**};		
 	end button.impl;
 	
 	--////////////////////////////////////////////////
@@ -174,117 +208,6 @@ public
 			event8: port right_toggle_down->launch_interface_thread.right_toggle_down;
 			event9: port timer_fire->launch_interface_thread.timer_fire;
 			event10: port launch_interface_thread.launch_missile->launch_missile;
-		annex behavior_specification  {**
-			variables
-				counter: Base_Types::Integer;
-				errored_at: Base_Types::Integer;
-			
-				is_left_toggle_up: Base_Types::Boolean;
-				is_right_toggle_up: Base_Types::Boolean;
-				is_toggles_error: Base_Types::Boolean;
-				is_left_button_pressed: Base_Types::Boolean;
-				is_right_button_pressed: Base_Types::Boolean;
-				is_buttons_error: Base_Types::Boolean;
-				
-				left_toggle_up_at: Base_Types::Integer;
-				right_toggle_up_at: Base_Types::Integer;
-				left_button_pressed_at: Base_Types::Integer;
-				right_button_pressed_at: Base_Types::Integer;
-			states
-				start: initial state;
-				standby: complete state;
-			transitions
-				start-[]->standby {
-					counter := 0;
-					is_left_toggle_up := false;
-					is_right_toggle_up := false;
-					is_toggles_error := false;
-					is_left_button_pressed := false;
-					is_right_button_pressed := false;
-					is_buttons_error := false
-				};
-				standby-[on dispatch timer_fire]->standby {
-					counter := counter + 1
-					if((is_toggle_error or is_button_error) and (counter - errored_at) > 3000)
-						is_toggle_error := false;
-						is_button_error := false
-					end if
-				};
-				standby-[on dispatch left_toggle_up]->standby {
-					if(not (is_toggle_error or is_button_error))
-						is_left_toggle_up := true;
-						left_toggle_up_at := counter;
-						if(is_right_toggle_up and (left_toggle_up_at - right_toggle_up_at) <= 5)
-							is_toggle_error := false
-						else
-							if(is_right_toggle_up)
-								is_toggle_error := true;
-								errored_at := counter
-							end if
-						end if
-					end if
-				};
-				standby-[on dispatch left_toggle_down]->standby {
-					is_left_toggle_up := false
-				};
-				standby-[on dispatch right_toggle_up]->standby {
-					if(not (is_toggle_error or is_button_error))
-						is_right_toggle_up := true;
-						right_toggle_up_at := counter
-						if(is_left_toggle_up and (right_toggle_up_at - left_toggle_up_at) <= 5)
-							is_toggle_error := false
-						else
-							if(is_left_toggle_up)
-								is_toggle_error := true;
-								errored_at := counter
-							end if
-						end if
-					end if
-				};
-				standby-[on dispatch right_toggle_down]->standby {
-					is_right_toggle_up := false
-				};
-				standby-[on dispatch left_button_pressed]->standby {
-					if(not (is_toggle_error or is_button_error))
-						is_right_button_pressed := true;
-						left_button_pressed_at := counter
-						if(is_left_toggle_up and is_right_toggle_up)
-							if(is_right_button_pressed and (left_button_pressed_at - right_button_pressed_at) <= 5)
-								is_button_error := false;
-								launch_missle := true
-							else
-								if(is_right_button_pressed)
-									is_button_error := true;
-									errored_at := counter
-								end if
-							end if
-						end if
-					end if
-				};
-				standby-[on dispatch left_button_released]->standby {
-					is_right_button_pressed := false
-				};
-				standby-[on dispatch right_button_pressed]->standby {
-					if(not (is_toggle_error or is_button_error))
-						is_right_button_pressed := true;
-						right_button_pressed_at := counter
-						if(is_left_toggle_up and is_right_toggle_up)
-							if(is_left_button_pressed and (right_button_pressed_at - left_button_pressed_at) <= 5)
-								is_button_error := false;
-								launch_missle := true
-							else
-								if(is_left_button_pressed)
-									is_button_error := true;
-									errored_at := counter
-								end if
-							end if
-						end if
-					end if
-				};
-				standby-[on dispatch right_button_pressed]->standby {
-					is_right_button_pressed := false
-				};
-		**};
 	end launch_interface_process.impl;
 	
 	--////////////////////////////////////////////////
@@ -323,6 +246,9 @@ public
 			event8: port right_toggle.toggled_down->launch_interface_process.right_toggle_down;
 			event9: port clock_process.time_interrupt->launch_interface_process.timer_fire;
 			event10: port launch_interface_process.launch_missile->launch_missile;
+		annex Resolute {**
+			
+		**};
 	end launch_interface_system.impl;
 	
 	--////////////////////////////////////////////////
