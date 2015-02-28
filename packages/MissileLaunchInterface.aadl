@@ -7,9 +7,10 @@ public
 	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	
 	annex Resolute {**
-		instantiation_is_reachable(source_component : component, destination_component : component) <= **"proves that component" source_component " can reach component " destination_component**
+		instantiation_is_reachable(source_component : component, destination_components : {component}) <= **"proves that component" source_component " can reach component " destination_components**
 			exists (c : reachable({source_component})) .
-				c = destination_component
+				exists (d : destination_components) .
+					c = d
 			
 		reachable(c : {component}) : {component} =
 			let next : {component} = union(c, next_reachable(c));
@@ -48,7 +49,7 @@ public
 			flow1: flow source toggled_up;
 			flow2: flow source toggled_down;
 		annex Resolute {**
-			prove(instantiation_is_reachable(this, instance(launch_interface_thread)))
+			prove(instantiation_is_reachable(this, instances(convert_event_to_boolean)))
 		**};
 	end toggle_switch.impl;
 	
@@ -66,7 +67,7 @@ public
 			flow1: flow source pressed;
 			flow2: flow source released;
 		annex Resolute {**
-			prove(instantiation_is_reachable(this, instance(launch_interface_thread)))
+			prove(instantiation_is_reachable(this, instances(convert_event_to_boolean)))
 		**};		
 	end button.impl;
 	
@@ -78,23 +79,21 @@ public
 	-- start subprograms
 	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	
+	subprogram determine_if_enable
+		features
+			enable_event: in event port;
+			disable_event: in event port;
+			enabled: out parameter Base_Types::Boolean;
+	end determine_if_enable;
+	
 	subprogram determine_if_launch
 		features
-			left_toggle_up: in event port;
-			left_toggle_down: in event port;
-			left_button_pressed: in event port;
-			left_button_released: in event port;
-			right_button_pressed: in event port;
-			right_button_released: in event port;
-			right_toggle_up: in event port;
-			right_toggle_down: in event port;
-			timer_fire: in event port;
+			left_toggle_enabled: in parameter Base_Types::Boolean;
+			left_button_enabled: in parameter Base_Types::Boolean;
+			right_button_enabled: in parameter Base_Types::Boolean;
+			right_toggle_enabled: in parameter Base_Types::Boolean;
 			launch_missile: out event data port Base_Types::Boolean;
 	end determine_if_launch;
-	
-	subprogram implementation determine_if_launch.impl
-		
-	end determine_if_launch.impl;
 	
 	--////////////////////////////////////////////////
 	-- end subprograms
@@ -119,17 +118,29 @@ public
 			flow1: flow source time_interrupt;
 	end clock_thread.impl;
 	
+	thread convert_event_to_boolean
+		features
+			enable_event: in event port;
+			disable_event: in event port;
+			enabled: out data port Base_Types::Boolean;
+	end convert_event_to_boolean;
+	
+	thread implementation convert_event_to_boolean.impl
+		calls M: {
+			method: subprogram determine_if_enable;
+		};
+		connections
+			event1: port enable_event->method.enable_event;
+			event2: port disable_event->method.disable_event;
+			output1: parameter method.enabled->enabled;
+	end convert_event_to_boolean.impl;
+	
 	thread launch_interface_thread
 		features
-			left_toggle_up: in event port;
-			left_toggle_down: in event port;
-			left_button_pressed: in event port;
-			left_button_released: in event port;
-			right_button_pressed: in event port;
-			right_button_released: in event port;
-			right_toggle_up: in event port;
-			right_toggle_down: in event port;
-			timer_fire: in event port;
+			left_toggle_enabled: in data port Base_Types::Boolean;
+			left_button_enabled: in data port Base_Types::Boolean;
+			right_button_enabled: in data port Base_Types::Boolean;
+			right_toggle_enabled: in data port Base_Types::Boolean;
 			launch_missile: out event data port Base_Types::Boolean;
 		annex agree {**
 			guarantee "will launch or not launch missile": launch_missile = true or launch_missile = false;
@@ -138,19 +149,17 @@ public
 	
 	thread implementation launch_interface_thread.impl
 		calls M: {
-			method: subprogram determine_if_launch.impl;
+			method: subprogram determine_if_launch;
 		};
 		connections
-			event1: port left_toggle_up->method.left_toggle_up;
-			event2: port left_toggle_down->method.left_toggle_down;
-			event3: port left_button_pressed->method.left_button_pressed;
-			event4: port left_button_released->method.left_button_released;
-			event5: port right_button_pressed->method.right_button_pressed;
-			event6: port right_button_released->method.right_button_released;
-			event7: port right_toggle_up->method.right_toggle_up;
-			event8: port right_toggle_down->method.right_toggle_down;
-			event9: port timer_fire->method.timer_fire;
-			event10: port method.launch_missile->launch_missile;
+			input1: parameter left_toggle_enabled->method.left_toggle_enabled;
+			input2: parameter left_button_enabled->method.left_button_enabled;
+			input3: parameter right_button_enabled->method.right_button_enabled;
+			input4: parameter right_toggle_enabled->method.right_toggle_enabled;
+			output1: port method.launch_missile->launch_missile;
+		annex agree {**
+			assert launch_missile = prev(left_toggle_enabled and left_button_enabled and right_button_enabled and right_toggle_enabled, false);
+		**};
 	end launch_interface_thread.impl;
 	
 	--////////////////////////////////////////////////
@@ -173,8 +182,6 @@ public
 			time_interrupt_thread: thread clock_thread.impl;
 		connections
 			output1: port time_interrupt_thread.time_interrupt -> time_interrupt;
-		flows
-			flow1: flow source time_interrupt;
 	end clock_process.impl;
 		
 	process launch_interface_process
@@ -196,18 +203,25 @@ public
 	
 	process implementation launch_interface_process.impl
 		subcomponents
+			left_toggle_read_thread: thread convert_event_to_boolean.impl;
+			right_toggle_read_thread: thread convert_event_to_boolean.impl;
+			left_button_read_thread: thread convert_event_to_boolean.impl;
+			right_button_read_thread: thread convert_event_to_boolean.impl;
 			launch_interface_thread: thread launch_interface_thread.impl;
 		connections
-			event1: port left_toggle_up->launch_interface_thread.left_toggle_up;
-			event2: port left_toggle_down->launch_interface_thread.left_toggle_down;
-			event3: port left_button_pressed->launch_interface_thread.left_button_pressed;
-			event4: port left_button_released->launch_interface_thread.left_button_released;
-			event5: port right_button_pressed->launch_interface_thread.right_button_pressed;
-			event6: port right_button_released->launch_interface_thread.right_button_released;
-			event7: port right_toggle_up->launch_interface_thread.right_toggle_up;
-			event8: port right_toggle_down->launch_interface_thread.right_toggle_down;
-			event9: port timer_fire->launch_interface_thread.timer_fire;
-			event10: port launch_interface_thread.launch_missile->launch_missile;
+			event1: port left_toggle_up->left_toggle_read_thread.enable_event;
+			event2: port left_toggle_down->left_toggle_read_thread.disable_event;
+			event3: port right_toggle_up->right_toggle_read_thread.enable_event;
+			event4: port right_toggle_down->right_toggle_read_thread.disable_event;
+			event5: port left_button_pressed->left_button_read_thread.enable_event;
+			event6: port left_button_released->left_button_read_thread.disable_event;
+			event7: port right_button_pressed->right_button_read_thread.enable_event;
+			event8: port right_button_released->right_button_read_thread.disable_event;
+			connection1: port left_toggle_read_thread.enabled->launch_interface_thread.left_toggle_enabled;
+			connection2: port right_toggle_read_thread.enabled->launch_interface_thread.right_toggle_enabled;
+			connection3: port left_button_read_thread.enabled->launch_interface_thread.left_button_enabled;
+			connection4: port right_button_read_thread.enabled->launch_interface_thread.right_button_enabled;
+			output1: port launch_interface_thread.launch_missile->launch_missile;
 	end launch_interface_process.impl;
 	
 	--////////////////////////////////////////////////
@@ -246,9 +260,6 @@ public
 			event8: port right_toggle.toggled_down->launch_interface_process.right_toggle_down;
 			event9: port clock_process.time_interrupt->launch_interface_process.timer_fire;
 			event10: port launch_interface_process.launch_missile->launch_missile;
-		annex Resolute {**
-			
-		**};
 	end launch_interface_system.impl;
 	
 	--////////////////////////////////////////////////
