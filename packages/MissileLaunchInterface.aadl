@@ -106,16 +106,12 @@ public
 	thread clock_thread
 		features
 			time_interrupt: out event port;
-		flows
-			flow1: flow source time_interrupt;
 		properties
 			Dispatch_Protocol => Periodic;
 			Period => 1ms;
 	end clock_thread;
 	
 	thread implementation clock_thread.impl
-		flows
-			flow1: flow source time_interrupt;
 	end clock_thread.impl;
 	
 	thread convert_event_to_boolean
@@ -172,16 +168,26 @@ public
 		
 	process clock_process
 		features
-			time_interrupt: out event port;
-		flows
-			flow1: flow source time_interrupt;
+			time: out data port Base_Types::Integer;
+		annex agree {**
+			guarantee "clock value will be greater than or equal to 0": time >= 0;
+		**};
 	end clock_process;
 	
 	process implementation clock_process.impl
 		subcomponents
 			time_interrupt_thread: thread clock_thread.impl;
-		connections
-			output1: port time_interrupt_thread.time_interrupt -> time_interrupt;
+		annex agree {**
+			node Counter(init:int, incr: int, reset: bool) returns(count: int);
+			let
+				count = if reset then init
+				else prev(count, init)+incr;
+			tel;
+			
+			eq x1 : int = Counter(0, 1, prev(x1 = 86400000, false));
+			
+			assert time = x1;
+		**};
 	end clock_process.impl;
 		
 	process launch_interface_process
@@ -258,7 +264,7 @@ public
 			event6: port right_button.released->launch_interface_process.right_button_released;
 			event7: port right_toggle.toggled_up->launch_interface_process.right_toggle_up;
 			event8: port right_toggle.toggled_down->launch_interface_process.right_toggle_down;
-			event9: port clock_process.time_interrupt->launch_interface_process.timer_fire;
+			event9: port clock_process.time->launch_interface_process.timer_fire;
 			event10: port launch_interface_process.launch_missile->launch_missile;
 	end launch_interface_system.impl;
 	
