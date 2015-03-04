@@ -1,0 +1,45 @@
+package MissileLaunchInterfaceSystem
+public
+	with EventHandler, TimerSystem, LaunchDecider, Devices, Base_Types;
+
+	system missile_launch_interface
+		features
+			launch_missile: out event data port Base_Types::Boolean;
+		annex agree {**
+			guarantee "will launch or not launch missile": launch_missile = true or launch_missile = false;
+		**};
+	end missile_launch_interface;
+	
+	system implementation missile_launch_interface.impl
+		subcomponents
+			timer_handler: system TimerSystem::external_timer.impl;
+			event_handler: system EventHandler::event_handler.impl;
+			launch_decider: system LaunchDecider::launch_decider.impl;
+			left_toggle: device Devices::toggle_switch.impl;
+			left_button: device Devices::button.impl;
+			right_button: device Devices::button.impl;
+			right_toggle: device Devices::toggle_switch.impl;
+			timer: device Devices::timer.impl;
+		connections
+			event1: port timer.fire->timer_handler.time_interrupt;
+			event2: port left_toggle.toggled_up->event_handler.left_toggle_up;
+			event3: port left_toggle.toggled_down->event_handler.left_toggle_down;
+			event4: port left_button.pressed->event_handler.left_button_down;
+			event5: port left_button.released->event_handler.left_button_up;
+			event6: port right_button.pressed->event_handler.right_button_down;
+			event7: port right_button.released->event_handler.right_button_up;
+			event8: port right_toggle.toggled_up->event_handler.right_toggle_up;
+			event9: port right_toggle.toggled_down->event_handler.right_toggle_down;
+			connection1: port timer_handler.time_out->event_handler.time_in;
+			connection2: port event_handler.left_toggle_enabled->launch_decider.left_toggle_enabled;
+			connection3: port event_handler.left_toggle_enabled_at->launch_decider.left_toggle_enabled_at;
+			connection4: port event_handler.left_button_enabled->launch_decider.left_button_enabled;
+			connection5: port event_handler.left_button_enabled_at->launch_decider.left_button_enabled_at;
+			connection6: port event_handler.right_button_enabled->launch_decider.right_button_enabled;
+			connection7: port event_handler.right_button_enabled_at->launch_decider.right_button_enabled_at;
+			connection8: port event_handler.right_toggle_enabled->launch_decider.right_toggle_enabled;
+			connection9: port event_handler.right_toggle_enabled_at->launch_decider.right_toggle_enabled_at;
+			output1: port launch_decider.launch->launch_missile;
+	end missile_launch_interface.impl;
+	
+end MissileLaunchInterfaceSystem;

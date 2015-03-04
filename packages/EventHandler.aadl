@@ -1,0 +1,200 @@
+package EventHandler
+public
+	with Base_Types;
+	
+	thread toggle_event_thread
+		features
+			toggle_up: in event port;
+			toggle_down: in event port;
+			time_in: in event data port Base_Types::Integer;
+			enabled: out data port Base_Types::Boolean;
+			time_out: out event data port Base_Types::Integer;
+		annex agree {**
+			guarantee "toggle enabled or disabled": enabled = false or enabled = true;
+		**};
+	end toggle_event_thread;
+	
+	thread implementation toggle_event_thread.impl
+		annex BLESS {**
+			invariant
+				<<true>>
+			states
+				start: initial state;
+				standby: complete state;
+			transitions
+				start-[]->standby { enabled := false };
+				standby-[on dispatch toggle_up]->standby { enabled := true; time_out!(time_in?) };
+				standby-[on dispatch toggle_down]->standby { enabled := false; time_out!(time_in?) };
+		**};
+		annex agree {**
+			assert enabled = true or enabled = false;
+		**};
+	end toggle_event_thread.impl;
+	
+	thread button_event_thread
+		features
+			button_up: in event port;
+			button_down: in event port;
+			time_in: in event data port Base_Types::Integer;
+			enabled: out data port Base_Types::Boolean;
+			time_out: out event data port Base_Types::Integer;
+		annex agree {**
+			guarantee "button enabled or disabled": enabled = false or enabled = true;
+		**};
+	end button_event_thread;
+	
+	thread implementation button_event_thread.impl
+		annex BLESS {**
+			invariant
+				<<true>>
+			states
+				start: initial state;
+				standby: complete state;
+			transitions
+				start-[]->standby { enabled := false };
+				standby-[on dispatch button_up]->standby { enabled := false; time_out!(time_in?) };
+				standby-[on dispatch button_down]->standby { enabled := true; time_out!(time_in?) };
+		**};
+		annex agree {**
+			assert enabled = true or enabled = false;
+		**};
+	end button_event_thread.impl;
+	
+	--////////////////////////////////////////////////////////////////
+	--================================================================
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	process toggle_event_handler
+		features
+			toggle_up: in event port;
+			toggle_down: in event port;
+			time_in: in event data port Base_Types::Integer;
+			enabled: out data port Base_Types::Boolean;
+			time_out: out event data port Base_Types::Integer;
+	end toggle_event_handler;
+	
+	process implementation toggle_event_handler.impl
+		subcomponents
+			toggle_event_thread: thread toggle_event_thread.impl;
+		connections
+			event1: port toggle_up->toggle_event_thread.toggle_up;
+			event2: port toggle_down->toggle_event_thread.toggle_down;
+			event3: port time_in->toggle_event_thread.time_in;
+			output1: port toggle_event_thread.enabled->enabled;
+			output2: port toggle_event_thread.time_out->time_out;
+	end toggle_event_handler.impl;
+	
+	process button_event_handler
+		features
+			button_up: in event port;
+			button_down: in event port;
+			time_in: in event data port Base_Types::Integer;
+			enabled: out data port Base_Types::Boolean;
+			time_out: out event data port Base_Types::Integer;
+	end button_event_handler;
+	
+	process implementation button_event_handler.impl
+		subcomponents
+			button_event_thread: thread button_event_thread.impl;
+		connections
+			event1: port button_up->button_event_thread.button_up;
+			event2: port button_down->button_event_thread.button_down;
+			event3: port time_in->button_event_thread.time_in;
+			output1: port button_event_thread.enabled->enabled;
+			output2: port button_event_thread.time_out->time_out;
+	end button_event_handler.impl;
+	
+	--////////////////////////////////////////////////////////////////
+	--================================================================
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	system event_handler
+		features
+			time_in: in event data port Base_Types::Integer;
+			left_toggle_up: in event port;
+			left_toggle_down: in event port;
+			left_button_up: in event port;
+			left_button_down: in event port;
+			right_button_up: in event port;
+			right_button_down: in event port;
+			right_toggle_up: in event port;
+			right_toggle_down: in event port;
+			left_toggle_enabled: out data port Base_Types::Boolean;
+			left_toggle_enabled_at: out data port Base_Types::Integer;
+			left_button_enabled: out data port Base_Types::Boolean;
+			left_button_enabled_at: out data port Base_Types::Integer;
+			right_button_enabled: out data port Base_Types::Boolean;
+			right_button_enabled_at: out data port Base_Types::Integer;
+			right_toggle_enabled: out data port Base_Types::Boolean;
+			right_toggle_enabled_at: out data port Base_Types::Integer;
+		annex agree {**
+			assume "time_out is greater than 0 but less than 86400000 (inclusive)": time_in >= 0 and time_in <= 86400000;
+			
+			guarantee "left_toggle_enabled_at is greater than 0 but less than 86400000 (inclusive)": left_toggle_enabled_at >= 0 and left_toggle_enabled_at <= 86400000;
+			guarantee "left_button_enabled_at is greater than 0 but less than 86400000 (inclusive)": left_button_enabled_at >= 0 and left_button_enabled_at <= 86400000;
+			guarantee "right_button_enabled_at is greater than 0 but less than 86400000 (inclusive)": right_button_enabled_at >= 0 and right_button_enabled_at <= 86400000;
+			guarantee "right_toggle_enabled_at is greater than 0 but less than 86400000 (inclusive)": right_toggle_enabled_at >= 0 and right_toggle_enabled_at <= 86400000;
+			
+			guarantee "left_toggle enabled or disabled": left_toggle_enabled = true or left_toggle_enabled = false;
+			guarantee "left_button enabled or disabled": left_button_enabled = true or left_button_enabled = false;
+			guarantee "right_button enabled or disabled": right_button_enabled = true or right_button_enabled = false;
+			guarantee "right_toggle enabled or disabled": right_toggle_enabled = true or right_toggle_enabled = false;
+		**};
+	end event_handler;
+	
+	system implementation event_handler.impl
+		subcomponents
+			left_button_handler: process button_event_handler.impl;
+			right_button_handler: process button_event_handler.impl;
+			left_toggle_handler: process toggle_event_handler.impl;
+			right_toggle_handler: process toggle_event_handler.impl;
+		connections
+			event1: port left_toggle_up->left_toggle_handler.toggle_up;
+			event2: port left_toggle_down->left_toggle_handler.toggle_down;
+			event3: port left_button_up->left_button_handler.button_up;
+			event4: port left_button_down->left_button_handler.button_down;
+			event5: port right_button_up->right_button_handler.button_up;
+			event6: port right_button_down->right_button_handler.button_down;
+			event7: port right_toggle_up->right_toggle_handler.toggle_up;
+			event8: port right_toggle_down->right_toggle_handler.toggle_down;
+			event9: port time_in->left_toggle_handler.time_in;
+			event10: port time_in->right_toggle_handler.time_in;
+			event11: port time_in->left_button_handler.time_in;
+			event12: port time_in->right_button_handler.time_in; 
+			output1: port left_toggle_handler.enabled->left_toggle_enabled;
+			output2: port left_button_handler.enabled->left_button_enabled;
+			output3: port right_button_handler.enabled->right_button_enabled;
+			output4: port right_toggle_handler.enabled->right_toggle_enabled;
+			output5: port left_toggle_handler.time_out->left_toggle_enabled_at;
+			output6: port right_toggle_handler.time_out->right_toggle_enabled_at;
+			output7: port left_button_handler.time_out->left_button_enabled_at;
+			output8: port right_button_handler.time_out->right_button_enabled_at;
+		annex BLESS {**
+			invariant
+				<<time_in >= 0>>
+			variables
+				left_toggle_is_enabled: Base_Types::Boolean;
+				right_toggle_is_enabled: Base_Types::Boolean;
+				left_button_is_enabled: Base_Types::Boolean;
+				right_button_is_enabled: Base_Types::Boolean;
+				left_toggle_was_enabled_at: Base_Types::Integer;
+				right_toggle_was_enabled_at: Base_Types::Integer;
+				left_button_was_enabled_at: Base_Types::Integer;
+				right_button_was_enabled_at: Base_Types::Integer;
+			states
+				start: initial state;
+				standby: complete state;
+			transitions
+				start-[]->standby { left_toggle_is_enabled := false; right_toggle_is_enabled := false; left_button_is_enabled := false; right_button_is_enabled := false; left_toggle_was_enabled_at := 0; right_toggle_was_enabled_at := 0; left_button_was_enabled_at := 0; right_button_was_enabled_at := 0 };
+				standby-[on dispatch left_toggle_up]->standby { left_toggle_is_enabled := true; left_toggle_was_enabled_at := time_in; left_toggle_enabled_at := left_toggle_was_enabled_at; left_toggle_enabled := left_toggle_is_enabled };
+				standby-[on dispatch left_toggle_down]->standby { left_toggle_is_enabled := false; left_toggle_was_enabled_at := 0; left_toggle_enabled_at := left_toggle_was_enabled_at; left_toggle_enabled := left_toggle_is_enabled };
+				standby-[on dispatch left_button_down]->standby { left_button_is_enabled := true; left_button_was_enabled_at := time_in; left_button_enabled_at := left_button_was_enabled_at; left_button_enabled := left_button_is_enabled };
+				standby-[on dispatch left_button_up]->standby { left_button_is_enabled := false; left_button_was_enabled_at := 0; left_button_enabled_at := left_button_was_enabled_at; left_button_enabled := left_button_is_enabled };
+				standby-[on dispatch right_button_down]->standby { right_button_is_enabled := true; right_button_was_enabled_at := time_in; right_button_enabled_at := right_button_was_enabled_at; right_button_enabled := right_button_is_enabled };
+				standby-[on dispatch right_button_up]->standby { right_button_is_enabled := false; right_button_was_enabled_at := 0; right_button_enabled_at := right_button_was_enabled_at; right_button_enabled := right_button_is_enabled };
+				standby-[on dispatch right_toggle_up]->standby { right_toggle_is_enabled := true; right_toggle_was_enabled_at := time_in; right_toggle_enabled_at := right_toggle_was_enabled_at; right_toggle_enabled := right_toggle_is_enabled };
+				standby-[on dispatch right_toggle_down]->standby { right_toggle_is_enabled := false; right_toggle_was_enabled_at := 0; right_toggle_enabled_at := right_toggle_was_enabled_at; right_toggle_enabled := right_toggle_is_enabled };
+		**};
+	end event_handler.impl;
+	
+end EventHandler;

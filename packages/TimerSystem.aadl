@@ -1,0 +1,100 @@
+package TimerSystem
+public
+	with Base_Types, BLESS;
+
+	thread clock_thread
+		features
+			time_interrupt: in event port;
+			time_out: out event data port Base_Types::Integer;
+		flows
+			flow1: flow path time_interrupt -> time_out;
+		properties
+			Dispatch_Protocol => Periodic;
+			Period => 1ms;
+		annex agree {**
+			guarantee "time will be greater than or equal to 0": time_out >= 0;
+		**};
+	end clock_thread;
+	
+	thread implementation clock_thread.impl
+		flows
+			flow1: flow path time_interrupt -> time_out;
+		annex BLESS {**
+			invariant
+				<<counter >= 0>>
+			variables
+				counter: Base_Types::Integer;
+			states
+				start: initial state <<counter = 0>>;
+				increment_counter: state;
+				standby: complete state;
+			transitions
+				start-[]->standby { counter := 0 };
+				standby-[on dispatch time_interrupt]->increment_counter {};
+				increment_counter-[counter + 1 > 8640000]->standby { counter := 0; time_out!(counter) };
+				increment_counter-[counter + 1 <= 8640000]->standby { counter := counter + 1; time_out!(counter) };
+		**};
+		annex agree {**
+			node Counter(init:int, incr: int, reset: bool) returns(count: int);
+			let
+				count = if reset then init
+				else prev(count, init)+incr;
+			tel;
+			
+			eq x1 : int = Counter(0, 1, prev(x1 = 8640000, false));
+			
+			assert time_out = x1;
+		**};
+	end clock_thread.impl;
+	
+	--////////////////////////////////////////////////////////////////
+	--================================================================
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	process clock_process
+		features
+			time_interrupt: in event port;
+			time_out: out event data port Base_Types::Integer;
+		flows
+			flow1: flow path time_interrupt -> time_out;
+		annex agree {**
+			guarantee "time will be greater than or equal to 0": time_out >= 0;
+		**};
+	end clock_process;
+	
+	process implementation clock_process.impl
+		subcomponents
+			clock_thread: thread clock_thread.impl;
+		connections
+			event1: port time_interrupt->clock_thread.time_interrupt;
+			output1: port clock_thread.time_out->time_out;
+		flows
+			flow1: flow path time_interrupt -> event1 -> clock_thread -> output1 -> time_out;
+	end clock_process.impl;
+	
+	--////////////////////////////////////////////////////////////////
+	--================================================================
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	system external_timer
+		features
+			time_interrupt: in event port;
+			time_out: out data port Base_Types::Integer;
+		flows
+			flow1: flow path time_interrupt -> time_out;
+		annex agree {**
+			guarantee "time will be greater than or equal to 0": time_out >= 0;
+		**};
+	end external_timer;
+	
+	system implementation external_timer.impl
+		subcomponents
+			clock_process: process clock_process.impl;
+		connections
+			event1: port time_interrupt->clock_process.time_interrupt;
+			output1: port clock_process.time_out->time_out;
+		flows
+			flow1: flow path time_interrupt -> event1 -> clock_process -> output1 -> time_out;
+	end external_timer.impl;
+	
+end TimerSystem;

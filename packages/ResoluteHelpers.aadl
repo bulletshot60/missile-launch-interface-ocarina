@@ -1,0 +1,33 @@
+package ResoluteHelpers
+public
+
+	annex Resolute {**
+		instantiation_is_reachable(source_component : component, destination_components : {component}) <= **"proves that component" source_component " can reach component " destination_components**
+			exists (c : reachable({source_component})) .
+				exists (d : destination_components) .
+					c = d
+			
+		reachable(c : {component}) : {component} =
+			let next : {component} = union(c, next_reachable(c));
+			if c = next then 
+				c
+			else
+				reachable(next)
+			
+		next_reachable(c : {component}) : {component} = 
+			{y for (x : c) (y : reachable_components(x))}
+			
+		reachable_components(c : component) : {component} = 
+			{y for (conn : connections(c)) (y : components_on_connection(c, conn))}
+			
+		components_on_connection(c : component, conn : connection) : {component} = 
+			if is_port_connection(conn) then
+				if source_component(conn) = c then
+					{destination_component(conn)}
+				else
+					{}
+			else
+				{}
+	**};
+	
+end ResoluteHelpers;

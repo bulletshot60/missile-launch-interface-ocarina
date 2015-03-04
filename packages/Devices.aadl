@@ -1,0 +1,47 @@
+package Devices
+public
+	with ResoluteHelpers;
+
+	device toggle_switch
+		features
+			toggled_up: out event port;
+			toggled_down: out event port;
+		flows
+			flow1: flow source toggled_up;
+			flow2: flow source toggled_down;
+	end toggle_switch;
+	
+	device implementation toggle_switch.impl
+		flows
+			flow1: flow source toggled_up;
+			flow2: flow source toggled_down;
+	end toggle_switch.impl;
+	
+	device button
+		features
+			pressed: out event port;
+			released: out event port;
+		flows
+			flow1: flow source pressed;
+			flow2: flow source released;
+	end button;
+	
+	device implementation button.impl
+		flows
+			flow1: flow source pressed;
+			flow2: flow source released;
+	end button.impl;
+	
+	device timer
+		features
+			fire: out event port;
+		flows
+			flow1: flow source fire;
+	end timer;
+	
+	device implementation timer.impl
+		flows
+			flow1: flow source fire;
+	end timer.impl;
+	
+end Devices;

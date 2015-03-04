@@ -1,0 +1,167 @@
+package LaunchDecider
+public
+	with Base_Types;
+	
+	subprogram launch_decider_subprogram
+		features
+			left_toggle_enabled: in parameter Base_Types::Boolean;
+			left_toggle_enabled_at: in parameter Base_Types::Integer;
+			left_button_enabled: in parameter Base_Types::Boolean;
+			left_button_enabled_at: in parameter Base_Types::Integer;
+			right_button_enabled: in parameter Base_Types::Boolean;
+			right_button_enabled_at: in parameter Base_Types::Integer;
+			right_toggle_enabled: in parameter Base_Types::Boolean;
+			right_toggle_enabled_at: in parameter Base_Types::Integer;
+			launch: out parameter Base_Types::Boolean;
+		annex SubBLESS {**
+			pre <<left_toggle_enabled_at >= 0 and left_button_enabled_at >= 0 and right_button_enabled_at >= 0 and right_toggle_enabled_at >= 0>>
+			post <<launch or not launch>>
+			declare toggle_diff:integer := (left_toggle_enabled_at - right_toggle_enabled_at > 0 ?? left_toggle_enabled_at - right_toggle_enabled_at : right_toggle_enabled_at - left_toggle_enabled_at);
+			        button_diff:integer := (left_button_enabled_at - right_button_enabled_at > 0 ?? left_button_enabled_at - right_button_enabled_at : right_button_enabled_at - left_button_enabled_at);
+			{
+				launch := (left_toggle_enabled and right_toggle_enabled and toggle_diff <= 2000)
+				      and (left_button_enabled and right_button_enabled and button_diff <= 2000)
+			}
+		**};
+	end launch_decider_subprogram;
+	
+	--////////////////////////////////////////////////////////////////
+	--================================================================
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	thread launch_decider_thread
+		features
+			left_toggle_enabled: in data port Base_Types::Boolean;
+			left_toggle_enabled_at: in data port Base_Types::Integer;
+			left_button_enabled: in data port Base_Types::Boolean;
+			left_button_enabled_at: in data port Base_Types::Integer;
+			right_button_enabled: in data port Base_Types::Boolean;
+			right_button_enabled_at: in data port Base_Types::Integer;
+			right_toggle_enabled: in data port Base_Types::Boolean;
+			right_toggle_enabled_at: in data port Base_Types::Integer;
+			launch: out data port Base_Types::Boolean;
+		annex agree {**
+			assume "left_toggle_enabled_at is greater than 0 but less than 86400000 (inclusive)": left_toggle_enabled_at >= 0 and left_toggle_enabled_at <= 86400000;
+			assume "left_button_enabled_at is greater than 0 but less than 86400000 (inclusive)": left_button_enabled_at >= 0 and left_button_enabled_at <= 86400000;
+			assume "right_button_enabled_at is greater than 0 but less than 86400000 (inclusive)": right_button_enabled_at >= 0 and right_button_enabled_at <= 86400000;
+			assume "right_toggle_enabled_at is greater than 0 but less than 86400000 (inclusive)": right_toggle_enabled_at >= 0 and right_toggle_enabled_at <= 86400000;
+			
+			assume "left_toggle enabled or disabled": left_toggle_enabled = true or left_toggle_enabled = false;
+			assume "left_button enabled or disabled": left_button_enabled = true or left_button_enabled = false;
+			assume "right_button enabled or disabled": right_button_enabled = true or right_button_enabled = false;
+			assume "right_toggle enabled or disabled": right_toggle_enabled = true or right_toggle_enabled = false;
+			
+			guarantee "will launch or not launch missile": launch = true or launch = false;
+		**};
+	end launch_decider_thread;
+	
+	thread implementation launch_decider_thread.impl
+		calls M: {
+			launch_decider_subprogram: subprogram launch_decider_subprogram;
+		};
+		connections
+			param1: parameter left_toggle_enabled->launch_decider_subprogram.left_toggle_enabled;
+			param2: parameter left_toggle_enabled_at->launch_decider_subprogram.left_toggle_enabled_at;
+			param3: parameter left_button_enabled->launch_decider_subprogram.left_button_enabled;
+			param4: parameter left_button_enabled_at->launch_decider_subprogram.left_button_enabled_at;
+			param5: parameter right_button_enabled->launch_decider_subprogram.right_button_enabled;
+			param6: parameter right_button_enabled_at->launch_decider_subprogram.right_button_enabled_at;
+			param7: parameter right_toggle_enabled->launch_decider_subprogram.right_toggle_enabled;
+			param8: parameter right_toggle_enabled_at->launch_decider_subprogram.right_toggle_enabled_at;
+			output1: parameter launch_decider_subprogram.launch->launch;
+		annex agree {**
+			assert launch = true or launch = false;
+		**};
+	end launch_decider_thread.impl;
+	
+	--////////////////////////////////////////////////////////////////
+	--================================================================
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	process launch_decider_process
+		features
+			left_toggle_enabled: in data port Base_Types::Boolean;
+			left_toggle_enabled_at: in data port Base_Types::Integer;
+			left_button_enabled: in data port Base_Types::Boolean;
+			left_button_enabled_at: in data port Base_Types::Integer;
+			right_button_enabled: in data port Base_Types::Boolean;
+			right_button_enabled_at: in data port Base_Types::Integer;
+			right_toggle_enabled: in data port Base_Types::Boolean;
+			right_toggle_enabled_at: in data port Base_Types::Integer;
+			launch: out data port Base_Types::Boolean;
+		annex agree {**
+			assume "left_toggle_enabled_at is greater than 0 but less than 86400000 (inclusive)": left_toggle_enabled_at >= 0 and left_toggle_enabled_at <= 86400000;
+			assume "left_button_enabled_at is greater than 0 but less than 86400000 (inclusive)": left_button_enabled_at >= 0 and left_button_enabled_at <= 86400000;
+			assume "right_button_enabled_at is greater than 0 but less than 86400000 (inclusive)": right_button_enabled_at >= 0 and right_button_enabled_at <= 86400000;
+			assume "right_toggle_enabled_at is greater than 0 but less than 86400000 (inclusive)": right_toggle_enabled_at >= 0 and right_toggle_enabled_at <= 86400000;
+			
+			assume "left_toggle enabled or disabled": left_toggle_enabled = true or left_toggle_enabled = false;
+			assume "left_button enabled or disabled": left_button_enabled = true or left_button_enabled = false;
+			assume "right_button enabled or disabled": right_button_enabled = true or right_button_enabled = false;
+			assume "right_toggle enabled or disabled": right_toggle_enabled = true or right_toggle_enabled = false;
+			
+			guarantee "will launch or not launch missile": launch = true or launch = false;
+		**};
+	end launch_decider_process;
+	
+	process implementation launch_decider_process.impl
+		subcomponents
+			launch_decider_thread: thread launch_decider_thread.impl;
+		connections
+			param1: port left_toggle_enabled->launch_decider_thread.left_toggle_enabled;
+			param2: port left_toggle_enabled_at->launch_decider_thread.left_toggle_enabled_at;
+			param3: port left_button_enabled->launch_decider_thread.left_button_enabled;
+			param4: port left_button_enabled_at->launch_decider_thread.left_button_enabled_at;
+			param5: port right_button_enabled->launch_decider_thread.right_button_enabled;
+			param6: port right_button_enabled_at->launch_decider_thread.right_button_enabled_at;
+			param7: port right_toggle_enabled->launch_decider_thread.right_toggle_enabled;
+			param8: port right_toggle_enabled_at->launch_decider_thread.right_toggle_enabled_at;
+			output1: port launch_decider_thread.launch->launch;
+	end launch_decider_process.impl;
+	
+	--////////////////////////////////////////////////////////////////
+	--================================================================
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	
+	system launch_decider
+		features
+			left_toggle_enabled: in data port Base_Types::Boolean;
+			left_toggle_enabled_at: in data port Base_Types::Integer;
+			left_button_enabled: in data port Base_Types::Boolean;
+			left_button_enabled_at: in data port Base_Types::Integer;
+			right_button_enabled: in data port Base_Types::Boolean;
+			right_button_enabled_at: in data port Base_Types::Integer;
+			right_toggle_enabled: in data port Base_Types::Boolean;
+			right_toggle_enabled_at: in data port Base_Types::Integer;
+			launch: out data port Base_Types::Boolean;
+		annex agree {**
+			assume "left_toggle_enabled_at is greater than 0 but less than 86400000 (inclusive)": left_toggle_enabled_at >= 0 and left_toggle_enabled_at <= 86400000;
+			assume "left_button_enabled_at is greater than 0 but less than 86400000 (inclusive)": left_button_enabled_at >= 0 and left_button_enabled_at <= 86400000;
+			assume "right_button_enabled_at is greater than 0 but less than 86400000 (inclusive)": right_button_enabled_at >= 0 and right_button_enabled_at <= 86400000;
+			assume "right_toggle_enabled_at is greater than 0 but less than 86400000 (inclusive)": right_toggle_enabled_at >= 0 and right_toggle_enabled_at <= 86400000;
+			
+			assume "left_toggle enabled or disabled": left_toggle_enabled = true or left_toggle_enabled = false;
+			assume "left_button enabled or disabled": left_button_enabled = true or left_button_enabled = false;
+			assume "right_button enabled or disabled": right_button_enabled = true or right_button_enabled = false;
+			assume "right_toggle enabled or disabled": right_toggle_enabled = true or right_toggle_enabled = false;
+			
+			guarantee "will launch or not launch missile": launch = true or launch = false;
+		**};
+	end launch_decider;
+	
+	system implementation launch_decider.impl
+		subcomponents
+			launch_decider_process: process launch_decider_process.impl;
+		connections
+			param1: port left_toggle_enabled->launch_decider_process.left_toggle_enabled;
+			param2: port left_toggle_enabled_at->launch_decider_process.left_toggle_enabled_at;
+			param3: port left_button_enabled->launch_decider_process.left_button_enabled;
+			param4: port left_button_enabled_at->launch_decider_process.left_button_enabled_at;
+			param5: port right_button_enabled->launch_decider_process.right_button_enabled;
+			param6: port right_button_enabled_at->launch_decider_process.right_button_enabled_at;
+			param7: port right_toggle_enabled->launch_decider_process.right_toggle_enabled;
+			param8: port right_toggle_enabled_at->launch_decider_process.right_toggle_enabled_at;
+			output1: port launch_decider_process.launch->launch;
+	end launch_decider.impl;
+	
+end LaunchDecider;
