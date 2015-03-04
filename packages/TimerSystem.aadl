@@ -30,7 +30,7 @@ public
 				standby: complete state;
 			transitions
 				start-[]->standby { counter := 0 };
-				standby-[on dispatch time_interrupt]->increment_counter {};
+				standby-[on dispatch time_interrupt]->increment_counter { counter := counter };
 				increment_counter-[counter + 1 > 8640000]->standby { counter := 0; time_out!(counter) };
 				increment_counter-[counter + 1 <= 8640000]->standby { counter := counter + 1; time_out!(counter) };
 		**};
