@@ -4,7 +4,7 @@ public
 
 	system missile_launch_interface
 		features
-			launch_missile: out event data port Base_Types::Boolean;
+			launch_missile: out data port Base_Types::Boolean;
 		annex agree {**
 			guarantee "will launch or not launch missile": launch_missile = true or launch_missile = false;
 		**};

@@ -6,11 +6,15 @@ public
 		features
 			toggle_up: in event port;
 			toggle_down: in event port;
-			time_in: in event data port Base_Types::Integer;
+			time_in: in data port Base_Types::Integer;
 			enabled: out data port Base_Types::Boolean;
-			time_out: out event data port Base_Types::Integer;
+			time_out: out data port Base_Types::Integer;
 		annex agree {**
-			guarantee "toggle enabled or disabled": enabled = false or enabled = true;
+			assume "time in is greater than or equal to 0 ": time_in >= 0;
+			
+			guarantee "time out is greater than or equal to 0 ": time_out >= 0;
+			
+			guarantee "enabled or disabled": enabled = true or enabled = false;
 		**};
 	end toggle_event_thread;
 	
@@ -27,6 +31,16 @@ public
 				standby-[on dispatch toggle_down]->standby { enabled := false; time_out!(time_in?) };
 		**};
 		annex agree {**
+			node Counter(init:int, incr: int, reset: bool) returns(count: int);
+			let
+				count = if reset then init
+				else prev(count, init)+incr;
+			tel;
+			
+			eq x1 : int = Counter(0, 1, prev(x1 = 8640000, false));
+			
+			assert time_out = x1;
+			
 			assert enabled = true or enabled = false;
 		**};
 	end toggle_event_thread.impl;
@@ -35,11 +49,15 @@ public
 		features
 			button_up: in event port;
 			button_down: in event port;
-			time_in: in event data port Base_Types::Integer;
+			time_in: in data port Base_Types::Integer;
 			enabled: out data port Base_Types::Boolean;
-			time_out: out event data port Base_Types::Integer;
+			time_out: out data port Base_Types::Integer;
 		annex agree {**
-			guarantee "button enabled or disabled": enabled = false or enabled = true;
+			assume "time in is greater than or equal to 0 ": time_in >= 0;
+			
+			guarantee "time out is greater than or equal to 0 ": time_out >= 0;
+			
+			guarantee "enabled or disabled": enabled = true or enabled = false;
 		**};
 	end button_event_thread;
 	
@@ -56,6 +74,16 @@ public
 				standby-[on dispatch button_down]->standby { enabled := true; time_out!(time_in?) };
 		**};
 		annex agree {**
+			node Counter(init:int, incr: int, reset: bool) returns(count: int);
+			let
+				count = if reset then init
+				else prev(count, init)+incr;
+			tel;
+			
+			eq x1 : int = Counter(0, 1, prev(x1 = 8640000, false));
+			
+			assert time_out = x1;
+			
 			assert enabled = true or enabled = false;
 		**};
 	end button_event_thread.impl;
@@ -68,9 +96,16 @@ public
 		features
 			toggle_up: in event port;
 			toggle_down: in event port;
-			time_in: in event data port Base_Types::Integer;
+			time_in: in data port Base_Types::Integer;
 			enabled: out data port Base_Types::Boolean;
-			time_out: out event data port Base_Types::Integer;
+			time_out: out data port Base_Types::Integer;
+		annex agree {**
+			assume "time in is greater than or equal to 0 ": time_in >= 0;
+			
+			guarantee "time out is greater than or equal to 0 ": time_out >= 0;
+			
+			guarantee "enabled or disabled": enabled = true or enabled = false;
+		**};
 	end toggle_event_handler;
 	
 	process implementation toggle_event_handler.impl
@@ -88,9 +123,16 @@ public
 		features
 			button_up: in event port;
 			button_down: in event port;
-			time_in: in event data port Base_Types::Integer;
+			time_in: in data port Base_Types::Integer;
 			enabled: out data port Base_Types::Boolean;
-			time_out: out event data port Base_Types::Integer;
+			time_out: out data port Base_Types::Integer;
+		annex agree {**
+			assume "time in is greater than or equal to 0 ": time_in >= 0;
+			
+			guarantee "time out is greater than or equal to 0 ": time_out >= 0;
+			
+			guarantee "enabled or disabled": enabled = true or enabled = false;
+		**};
 	end button_event_handler;
 	
 	process implementation button_event_handler.impl
@@ -110,7 +152,7 @@ public
 	
 	system event_handler
 		features
-			time_in: in event data port Base_Types::Integer;
+			time_in: in data port Base_Types::Integer;
 			left_toggle_up: in event port;
 			left_toggle_down: in event port;
 			left_button_up: in event port;
@@ -128,12 +170,12 @@ public
 			right_toggle_enabled: out data port Base_Types::Boolean;
 			right_toggle_enabled_at: out data port Base_Types::Integer;
 		annex agree {**
-			assume "time_out is greater than 0 but less than 86400000 (inclusive)": time_in >= 0 and time_in <= 86400000;
+			assume "time in is greater than or equal to 0 ": time_in >= 0;
 			
-			guarantee "left_toggle_enabled_at is greater than 0 but less than 86400000 (inclusive)": left_toggle_enabled_at >= 0 and left_toggle_enabled_at <= 86400000;
-			guarantee "left_button_enabled_at is greater than 0 but less than 86400000 (inclusive)": left_button_enabled_at >= 0 and left_button_enabled_at <= 86400000;
-			guarantee "right_button_enabled_at is greater than 0 but less than 86400000 (inclusive)": right_button_enabled_at >= 0 and right_button_enabled_at <= 86400000;
-			guarantee "right_toggle_enabled_at is greater than 0 but less than 86400000 (inclusive)": right_toggle_enabled_at >= 0 and right_toggle_enabled_at <= 86400000;
+			guarantee "left_toggle_enabled_at is greater than or equal to 0 ": left_toggle_enabled_at >= 0;
+			guarantee "left_button_enabled_at is greater than or equal to 0 ": left_button_enabled_at >= 0;
+			guarantee "right_button_enabled_at is greater than or equal to 0 ": right_button_enabled_at >= 0;
+			guarantee "right_toggle_enabled_at is greater than or equal to 0 ": right_toggle_enabled_at >= 0;
 			
 			guarantee "left_toggle enabled or disabled": left_toggle_enabled = true or left_toggle_enabled = false;
 			guarantee "left_button enabled or disabled": left_button_enabled = true or left_button_enabled = false;

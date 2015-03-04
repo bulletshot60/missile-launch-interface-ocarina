@@ -12,7 +12,7 @@ public
 			Dispatch_Protocol => Periodic;
 			Period => 1ms;
 		annex agree {**
-			guarantee "time will be greater than or equal to 0": time_out >= 0;
+			guarantee "time out is greater than or equal to 0 ": time_out >= 0;
 		**};
 	end clock_thread;
 	
@@ -58,7 +58,7 @@ public
 		flows
 			flow1: flow path time_interrupt -> time_out;
 		annex agree {**
-			guarantee "time will be greater than or equal to 0": time_out >= 0;
+			guarantee "time out is greater than or equal to 0 ": time_out >= 0;
 		**};
 	end clock_process;
 	
@@ -83,7 +83,7 @@ public
 		flows
 			flow1: flow path time_interrupt -> time_out;
 		annex agree {**
-			guarantee "time will be greater than or equal to 0": time_out >= 0;
+			guarantee "time out is greater than or equal to 0 ": time_out >= 0;
 		**};
 	end external_timer;
 	
