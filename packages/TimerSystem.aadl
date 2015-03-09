@@ -11,6 +11,7 @@ public
 		properties
 			Dispatch_Protocol => Periodic;
 			Period => 1ms;
+			Compute_Execution_Time => 0ms..1ms;
 		annex agree {**
 			guarantee "time out is greater than or equal to 0 ": time_out >= 0;
 		**};

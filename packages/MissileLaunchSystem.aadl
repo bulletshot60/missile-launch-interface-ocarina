@@ -2,6 +2,29 @@ package MissileLaunchInterfaceSystem
 public
 	with EventHandler, TimerSystem, LaunchDecider, Devices, Base_Types;
 
+	processor embedded_cpu
+		properties
+			Scheduling_Protocol => (Static);
+	end embedded_cpu;
+	
+	processor timing_cpu extends embedded_cpu
+		features
+			socket: requires bus access can;
+	end timing_cpu;
+	
+	processor event_cpu extends embedded_cpu
+		features
+			socket: requires bus access can;
+	end event_cpu;
+	
+	processor launch_decider_cpu extends embedded_cpu
+		features
+			socket: requires bus access can;
+	end launch_decider_cpu;
+	
+	bus can
+	end can;
+
 	system missile_launch_interface
 		features
 			launch_missile: out data port Base_Types::Boolean;
@@ -20,6 +43,12 @@ public
 			right_button: device Devices::button.impl;
 			right_toggle: device Devices::toggle_switch.impl;
 			timer: device Devices::timer.impl;
+			
+			timing_cpu: processor timing_cpu;
+			event_cpu: processor event_cpu;
+			launch_decider_cpu: processor launch_decider_cpu; 
+			
+			can_bus: bus can; 
 		connections
 			event1: port timer.fire->timer_handler.time_interrupt;
 			event2: port left_toggle.toggled_up->event_handler.left_toggle_up;
@@ -40,6 +69,21 @@ public
 			connection8: port event_handler.right_toggle_enabled->launch_decider.right_toggle_enabled;
 			connection9: port event_handler.right_toggle_enabled_at->launch_decider.right_toggle_enabled_at;
 			output1: port launch_decider.launch->launch_missile;
+			
+			timing_connection: bus access timing_cpu.socket <-> can_bus;
+			event_cpu_connection: bus access event_cpu.socket <-> can_bus;
+			launch_decider_connection: bus access launch_decider_cpu.socket <-> can_bus;
+		properties
+			Actual_Processor_Binding => (reference (timing_cpu)) applies to timer_handler; 
+			Actual_Processor_Binding => (reference (event_cpu)) applies to event_handler;
+			Actual_Processor_Binding => (reference (launch_decider_cpu)) applies to launch_decider;
+			
+			Actual_Connection_Binding => (reference (can_bus)) applies to event1, event2, event3, event4, event5, event6, event7, event8, event9;
+			Actual_Connection_Binding => (reference (can_bus)) applies to connection1, connection2, connection3, connection4, connection5, connection6, connection7, connection8, connection9;
+			Actual_Connection_Binding => (reference (can_bus)) applies to output1;
+		annex Resolute {**
+			prove(Req1(this))
+		**};
 	end missile_launch_interface.impl;
 	
 end MissileLaunchInterfaceSystem;

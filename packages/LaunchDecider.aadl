@@ -40,6 +40,9 @@ public
 			right_toggle_enabled: in data port Base_Types::Boolean;
 			right_toggle_enabled_at: in data port Base_Types::Integer;
 			launch: out data port Base_Types::Boolean;
+		properties
+			Dispatch_Protocol => Sporadic;
+			Compute_Execution_Time => 1ms..500ms;
 		annex agree {**
 			guarantee "will launch or not launch missile": launch = true or launch = false;
 		**};

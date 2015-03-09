@@ -2,6 +2,23 @@ package ResoluteHelpers
 public
 
 	annex Resolute {**
+		Req1(self : component) <= **"all threads have period"**
+			let threads: {component} = collect_threads({self});
+			forall(t : threads) .
+				thread_has_period(t)
+				
+		thread_has_period(t : component) <= **"thread " t " has period"**
+			has_property(t, Thread_Properties::Dispatch_Protocol)
+			
+		collect_threads(self : {component}) : {component} =
+			{t for (c : self) (t : collect_thread(c))}
+		
+		collect_thread(self : component) : {component} =
+			if self instanceof thread then
+				union({self}, collect_threads(subcomponents(self)))
+			else
+				collect_threads(subcomponents(self))
+		
 		instantiation_is_reachable(source_component : component, destination_components : {component}) <= **"proves that component" source_component " can reach component " destination_components**
 			exists (c : reachable({source_component})) .
 				exists (d : destination_components) .

@@ -9,6 +9,9 @@ public
 			time_in: in data port Base_Types::Integer;
 			enabled: out data port Base_Types::Boolean;
 			time_out: out data port Base_Types::Integer;
+		properties
+			Dispatch_Protocol => Sporadic;
+			Compute_Execution_Time => 1ms..500ms;
 		annex agree {**
 			assume "time in is greater than or equal to 0 ": time_in >= 0;
 			
@@ -52,6 +55,9 @@ public
 			time_in: in data port Base_Types::Integer;
 			enabled: out data port Base_Types::Boolean;
 			time_out: out data port Base_Types::Integer;
+		properties
+			Dispatch_Protocol => Sporadic;
+			Compute_Execution_Time => 1ms..500ms;
 		annex agree {**
 			assume "time in is greater than or equal to 0 ": time_in >= 0;
 			
