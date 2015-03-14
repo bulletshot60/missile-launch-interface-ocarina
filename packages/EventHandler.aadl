@@ -123,6 +123,9 @@ public
 			event3: port time_in->toggle_event_thread.time_in;
 			output1: port toggle_event_thread.enabled->enabled;
 			output2: port toggle_event_thread.time_out->time_out;
+		annex agree {**
+			lift toggle_event_thread;
+		**};
 	end toggle_event_handler.impl;
 	
 	process button_event_handler
@@ -150,6 +153,9 @@ public
 			event3: port time_in->button_event_thread.time_in;
 			output1: port button_event_thread.enabled->enabled;
 			output2: port button_event_thread.time_out->time_out;
+		annex agree {**
+			lift button_event_thread;
+		**};
 	end button_event_handler.impl;
 	
 	--////////////////////////////////////////////////////////////////
@@ -242,6 +248,12 @@ public
 				standby-[on dispatch right_button_up]->standby { right_button_is_enabled := false; right_button_was_enabled_at := 0; right_button_enabled_at := right_button_was_enabled_at; right_button_enabled := right_button_is_enabled };
 				standby-[on dispatch right_toggle_up]->standby { right_toggle_is_enabled := true; right_toggle_was_enabled_at := time_in; right_toggle_enabled_at := right_toggle_was_enabled_at; right_toggle_enabled := right_toggle_is_enabled };
 				standby-[on dispatch right_toggle_down]->standby { right_toggle_is_enabled := false; right_toggle_was_enabled_at := 0; right_toggle_enabled_at := right_toggle_was_enabled_at; right_toggle_enabled := right_toggle_is_enabled };
+		**};
+		annex agree {**
+			lift left_button_handler;
+			lift right_button_handler;
+			lift left_toggle_handler;
+			lift right_toggle_handler;
 		**};
 	end event_handler.impl;
 	
