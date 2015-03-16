@@ -46,6 +46,8 @@ public
 		annex agree {**
 			assume "time greater than 0": left_toggle_enabled_at >= 0 and left_button_enabled_at >= 0 and right_button_enabled_at >= 0 and right_toggle_enabled_at >= 0;
 				
+			guarantee "launch will not occur if either button is not active": launch = false or (launch = true and left_button_enabled = true and right_button_enabled = true);
+			guarantee "launch will not occur if either toggle is not active": launch = false or (launch = true and left_toggle_enabled = true and right_toggle_enabled = true);
 			guarantee "launch will not occur if left_toggle and button not active within two seconds": launch = false or (left_button_enabled_at > left_toggle_enabled_at) and left_button_enabled and left_toggle_enabled and (0 <= (left_button_enabled_at - left_toggle_enabled_at) and (left_button_enabled_at - left_toggle_enabled_at) <= 2);
 			guarantee "launch will not occur if right_toggle and button not active within two seconds": launch = false or right_button_enabled and right_toggle_enabled and (0 <= (right_button_enabled_at - right_toggle_enabled_at) and (right_button_enabled_at - right_toggle_enabled_at) <= 2);
 			guarantee "launch will not occur if two sides not activated in time limit": launch = false or (0 <= (left_button_enabled_at - right_button_enabled_at) and (left_button_enabled_at - right_button_enabled_at) <= 2) or (0 <= (right_button_enabled_at - left_button_enabled_at) and (right_button_enabled_at - left_button_enabled_at) <= 2);
@@ -97,6 +99,8 @@ public
 		annex agree {**
 			assume "time greater than 0": left_toggle_enabled_at >= 0 and left_button_enabled_at >= 0 and right_button_enabled_at >= 0 and right_toggle_enabled_at >= 0; 
 				
+			guarantee "launch will not occur if either button is not active": launch = false or (launch = true and left_button_enabled = true and right_button_enabled = true);
+			guarantee "launch will not occur if either toggle is not active": launch = false or (launch = true and left_toggle_enabled = true and right_toggle_enabled = true);
 			guarantee "launch will not occur if left_toggle and button not active within two seconds": launch = false or (left_button_enabled_at > left_toggle_enabled_at) and left_button_enabled and left_toggle_enabled and (0 <= (left_button_enabled_at - left_toggle_enabled_at) and (left_button_enabled_at - left_toggle_enabled_at) <= 2);
 			guarantee "launch will not occur if right_toggle and button not active within two seconds": launch = false or right_button_enabled and right_toggle_enabled and (0 <= (right_button_enabled_at - right_toggle_enabled_at) and (right_button_enabled_at - right_toggle_enabled_at) <= 2);
 			guarantee "launch will not occur if two sides not activated in time limit": launch = false or (0 <= (left_button_enabled_at - right_button_enabled_at) and (left_button_enabled_at - right_button_enabled_at) <= 2) or (0 <= (right_button_enabled_at - left_button_enabled_at) and (right_button_enabled_at - left_button_enabled_at) <= 2);
@@ -139,6 +143,8 @@ public
 		annex agree {**
 			assume "time greater than 0": left_toggle_enabled_at >= 0 and left_button_enabled_at >= 0 and right_button_enabled_at >= 0 and right_toggle_enabled_at >= 0;
 				
+			guarantee "launch will not occur if either button is not active": launch = false or (launch = true and left_button_enabled = true and right_button_enabled = true);
+			guarantee "launch will not occur if either toggle is not active": launch = false or (launch = true and left_toggle_enabled = true and right_toggle_enabled = true);
 			guarantee "launch will not occur if left_toggle and button not active within two seconds": launch = false or (left_button_enabled_at > left_toggle_enabled_at) and left_button_enabled and left_toggle_enabled and (0 <= (left_button_enabled_at - left_toggle_enabled_at) and (left_button_enabled_at - left_toggle_enabled_at) <= 2);
 			guarantee "launch will not occur if right_toggle and button not active within two seconds": launch = false or right_button_enabled and right_toggle_enabled and (0 <= (right_button_enabled_at - right_toggle_enabled_at) and (right_button_enabled_at - right_toggle_enabled_at) <= 2);
 			guarantee "launch will not occur if two sides not activated in time limit": launch = false or (0 <= (left_button_enabled_at - right_button_enabled_at) and (left_button_enabled_at - right_button_enabled_at) <= 2) or (0 <= (right_button_enabled_at - left_button_enabled_at) and (right_button_enabled_at - left_button_enabled_at) <= 2);
