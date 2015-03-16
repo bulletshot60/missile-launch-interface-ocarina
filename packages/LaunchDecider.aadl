@@ -44,7 +44,11 @@ public
 			Dispatch_Protocol => Sporadic;
 			Compute_Execution_Time => 1ms..500ms;
 		annex agree {**
-			guarantee "will launch or not launch missile": launch = true or launch = false;
+			assume "time greater than 0": left_toggle_enabled_at >= 0 and left_button_enabled_at >= 0 and right_button_enabled_at >= 0 and right_toggle_enabled_at >= 0;
+				
+			guarantee "launch will not occur if left_toggle and button not active within two seconds": launch = false or (left_button_enabled_at > left_toggle_enabled_at) and left_button_enabled and left_toggle_enabled and (0 <= (left_button_enabled_at - left_toggle_enabled_at) and (left_button_enabled_at - left_toggle_enabled_at) <= 2);
+			guarantee "launch will not occur if right_toggle and button not active within two seconds": launch = false or right_button_enabled and right_toggle_enabled and (0 <= (right_button_enabled_at - right_toggle_enabled_at) and (right_button_enabled_at - right_toggle_enabled_at) <= 2);
+			guarantee "launch will not occur if two sides not activated in time limit": launch = false or (0 <= (left_button_enabled_at - right_button_enabled_at) and (left_button_enabled_at - right_button_enabled_at) <= 2) or (0 <= (right_button_enabled_at - left_button_enabled_at) and (right_button_enabled_at - left_button_enabled_at) <= 2);
 		**};
 	end launch_decider_thread;
 	
@@ -63,7 +67,15 @@ public
 		--	param8: parameter right_toggle_enabled_at->launch_decider_subprogram.right_toggle_enabled_at;
 		--	output1: parameter launch_decider_subprogram.launch->launch;
 		annex agree {**
-			assert launch = true or launch = false;
+			fun abs(x: int) : int = if x < 0 then x * -1 else x;
+			
+			eq leftToggleFlippedFirst: bool = left_toggle_enabled_at < left_button_enabled_at;
+			eq rightToggleFlippedFirst: bool = right_toggle_enabled_at < right_button_enabled_at;
+			eq leftEnabled: bool = left_toggle_enabled and left_button_enabled and leftToggleFlippedFirst and (left_button_enabled_at - left_toggle_enabled_at) <= 2;
+			eq rightEnabled: bool = right_toggle_enabled and right_button_enabled and rightToggleFlippedFirst and (right_button_enabled_at - right_toggle_enabled_at) <= 2;
+			eq enabled: bool = leftEnabled and rightEnabled and abs(right_button_enabled_at - left_button_enabled_at) <= 2;
+			
+			assert launch = enabled;
 		**};
 	end launch_decider_thread.impl;
 	
@@ -83,7 +95,11 @@ public
 			right_toggle_enabled_at: in data port Base_Types::Integer;
 			launch: out data port Base_Types::Boolean;
 		annex agree {**
-			guarantee "will launch or not launch missile": launch = true or launch = false;
+			assume "time greater than 0": left_toggle_enabled_at >= 0 and left_button_enabled_at >= 0 and right_button_enabled_at >= 0 and right_toggle_enabled_at >= 0; 
+				
+			guarantee "launch will not occur if left_toggle and button not active within two seconds": launch = false or (left_button_enabled_at > left_toggle_enabled_at) and left_button_enabled and left_toggle_enabled and (0 <= (left_button_enabled_at - left_toggle_enabled_at) and (left_button_enabled_at - left_toggle_enabled_at) <= 2);
+			guarantee "launch will not occur if right_toggle and button not active within two seconds": launch = false or right_button_enabled and right_toggle_enabled and (0 <= (right_button_enabled_at - right_toggle_enabled_at) and (right_button_enabled_at - right_toggle_enabled_at) <= 2);
+			guarantee "launch will not occur if two sides not activated in time limit": launch = false or (0 <= (left_button_enabled_at - right_button_enabled_at) and (left_button_enabled_at - right_button_enabled_at) <= 2) or (0 <= (right_button_enabled_at - left_button_enabled_at) and (right_button_enabled_at - left_button_enabled_at) <= 2);
 		**};
 	end launch_decider_process;
 	
@@ -100,6 +116,9 @@ public
 			param7: port right_toggle_enabled->launch_decider_thread.right_toggle_enabled;
 			param8: port right_toggle_enabled_at->launch_decider_thread.right_toggle_enabled_at;
 			output1: port launch_decider_thread.launch->launch;
+		annex agree {**
+			lift launch_decider_thread;
+		**};
 	end launch_decider_process.impl;
 	
 	--////////////////////////////////////////////////////////////////
@@ -118,7 +137,11 @@ public
 			right_toggle_enabled_at: in data port Base_Types::Integer;
 			launch: out data port Base_Types::Boolean;
 		annex agree {**
-			guarantee "will launch or not launch missile": launch = true or launch = false;
+			assume "time greater than 0": left_toggle_enabled_at >= 0 and left_button_enabled_at >= 0 and right_button_enabled_at >= 0 and right_toggle_enabled_at >= 0;
+				
+			guarantee "launch will not occur if left_toggle and button not active within two seconds": launch = false or (left_button_enabled_at > left_toggle_enabled_at) and left_button_enabled and left_toggle_enabled and (0 <= (left_button_enabled_at - left_toggle_enabled_at) and (left_button_enabled_at - left_toggle_enabled_at) <= 2);
+			guarantee "launch will not occur if right_toggle and button not active within two seconds": launch = false or right_button_enabled and right_toggle_enabled and (0 <= (right_button_enabled_at - right_toggle_enabled_at) and (right_button_enabled_at - right_toggle_enabled_at) <= 2);
+			guarantee "launch will not occur if two sides not activated in time limit": launch = false or (0 <= (left_button_enabled_at - right_button_enabled_at) and (left_button_enabled_at - right_button_enabled_at) <= 2) or (0 <= (right_button_enabled_at - left_button_enabled_at) and (right_button_enabled_at - left_button_enabled_at) <= 2);
 		**};
 	end launch_decider;
 	
@@ -135,6 +158,9 @@ public
 			param7: port right_toggle_enabled->launch_decider_process.right_toggle_enabled;
 			param8: port right_toggle_enabled_at->launch_decider_process.right_toggle_enabled_at;
 			output1: port launch_decider_process.launch->launch;
+		annex agree {**
+			lift launch_decider_process;
+		**};
 	end launch_decider.impl;
 	
 end LaunchDecider;
