@@ -1,0 +1,14 @@
+package DataTypes
+public
+	with Data_Model;
+	
+	data boolean
+		properties
+			Data_Model::Data_Representation => integer;
+	end boolean;
+	
+	data integer
+		properties
+			Data_Model::Data_Representation => integer;
+	end integer;
+end DataTypes;

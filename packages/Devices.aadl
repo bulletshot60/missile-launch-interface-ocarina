@@ -1,53 +1,83 @@
 package Devices
 public
-	with ResoluteHelpers, EventHandler;
+	with EventHandler, TimerSystem, DataTypes;
 
-	device toggle_switch
+	subprogram device_reader_subprogram
 		features
-			toggled_up: out event port;
-			toggled_down: out event port;
-		flows
-			flow1: flow source toggled_up;
-			flow2: flow source toggled_down;
-	end toggle_switch;
-	
-	device implementation toggle_switch.impl
-		flows
-			flow1: flow source toggled_up;
-			flow2: flow source toggled_down;
-		annex Resolute {**
-			prove(instantiation_is_reachable(this, instances(EventHandler::toggle_event_thread)))
-		**};
-	end toggle_switch.impl;
-	
-	device button
+			left_toggle_toggled_up: out parameter DataTypes::boolean;
+			left_toggle_toggled_down: out parameter DataTypes::boolean;
+			right_toggle_toggled_up: out parameter DataTypes::boolean;
+			right_toggle_toggled_down: out parameter DataTypes::boolean;
+			left_button_pressed: out parameter DataTypes::boolean;
+			left_button_released: out parameter DataTypes::boolean;
+			right_button_pressed: out parameter DataTypes::boolean;
+			right_button_released: out parameter DataTypes::boolean;
+			fire: out parameter DataTypes::integer;
+	end device_reader_subprogram;
+
+	--////////////////////////////////////////////////////////////////
+	--================================================================
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+	thread device_reader_thread
 		features
-			pressed: out event port;
-			released: out event port;
-		flows
-			flow1: flow source pressed;
-			flow2: flow source released;
-	end button;
+			left_toggle_toggled_up: out event data port DataTypes::boolean;
+			left_toggle_toggled_down: out event data port DataTypes::boolean;
+			right_toggle_toggled_up: out event data port DataTypes::boolean;
+			right_toggle_toggled_down: out event data port DataTypes::boolean;
+			left_button_pressed: out event data port DataTypes::boolean;
+			left_button_released: out event data port DataTypes::boolean;
+			right_button_pressed: out event data port DataTypes::boolean;
+			right_button_released: out event data port DataTypes::boolean;
+			fire: out event data port DataTypes::integer;
+	end device_reader_thread;
 	
-	device implementation button.impl
-		flows
-			flow1: flow source pressed;
-			flow2: flow source released;
-		annex Resolute {**
-			prove(instantiation_is_reachable(this, instances(EventHandler::button_event_thread)))
-		**};
-	end button.impl;
-	
-	device timer
+	thread implementation device_reader_thread.impl
+		calls M: {
+			subroutine: subprogram device_reader_subprogram;
+		};
+		connections
+			event1: parameter subroutine.left_toggle_toggled_up->left_toggle_toggled_up;
+			event2: parameter subroutine.left_toggle_toggled_down->left_toggle_toggled_down;
+			event3: parameter subroutine.right_toggle_toggled_up->right_toggle_toggled_up;
+			event4: parameter subroutine.right_toggle_toggled_down->right_toggle_toggled_down;
+			event5: parameter subroutine.left_button_pressed->left_button_pressed;
+			event6: parameter subroutine.left_button_released->left_button_released;
+			event7: parameter subroutine.right_button_pressed->right_button_pressed;
+			event8: parameter subroutine.right_button_released->right_button_released;
+			event9: parameter subroutine.fire->fire;
+	end device_reader_thread.impl;
+
+	--////////////////////////////////////////////////////////////////
+	--================================================================
+	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+	process device_reader
 		features
-			fire: out event port;
-		flows
-			flow1: flow source fire;
-	end timer;
+			left_toggle_toggled_up: out event data port DataTypes::boolean;
+			left_toggle_toggled_down: out event data port DataTypes::boolean;
+			right_toggle_toggled_up: out event data port DataTypes::boolean;
+			right_toggle_toggled_down: out event data port DataTypes::boolean;
+			left_button_pressed: out event data port DataTypes::boolean;
+			left_button_released: out event data port DataTypes::boolean;
+			right_button_pressed: out event data port DataTypes::boolean;
+			right_button_released: out event data port DataTypes::boolean;
+			fire: out event data port DataTypes::integer;
+	end device_reader;
 	
-	device implementation timer.impl
-		flows
-			flow1: flow source fire;
-	end timer.impl;
+	process implementation device_reader.impl
+		subcomponents
+			device_reader_thread: thread device_reader_thread.impl;
+		connections
+			event1: port device_reader_thread.left_toggle_toggled_up->left_toggle_toggled_up;
+			event2: port device_reader_thread.left_toggle_toggled_down->left_toggle_toggled_down;
+			event3: port device_reader_thread.right_toggle_toggled_up->right_toggle_toggled_up;
+			event4: port device_reader_thread.right_toggle_toggled_down->right_toggle_toggled_down;
+			event5: port device_reader_thread.left_button_pressed->left_button_pressed;
+			event6: port device_reader_thread.left_button_released->left_button_released;
+			event7: port device_reader_thread.right_button_pressed->right_button_pressed;
+			event8: port device_reader_thread.right_button_released->right_button_released;
+			event9: port device_reader_thread.fire->fire;
+	end device_reader.impl;
 	
 end Devices;

@@ -1,28 +1,17 @@
 package LaunchDecider
 public
-	with Base_Types;
+	with DataTypes;
 	
 	subprogram launch_decider_subprogram
 		features
-			left_toggle_enabled: in parameter Base_Types::Boolean;
-			left_toggle_enabled_at: in parameter Base_Types::Integer;
-			left_button_enabled: in parameter Base_Types::Boolean;
-			left_button_enabled_at: in parameter Base_Types::Integer;
-			right_button_enabled: in parameter Base_Types::Boolean;
-			right_button_enabled_at: in parameter Base_Types::Integer;
-			right_toggle_enabled: in parameter Base_Types::Boolean;
-			right_toggle_enabled_at: in parameter Base_Types::Integer;
-			launch: out parameter Base_Types::Boolean;
-		annex SubBLESS {**
-			pre <<left_toggle_enabled_at >= 0 and left_button_enabled_at >= 0 and right_button_enabled_at >= 0 and right_toggle_enabled_at >= 0>>
-			post <<launch or not launch>>
-			declare toggle_diff:integer := (left_toggle_enabled_at - right_toggle_enabled_at > 0 ?? left_toggle_enabled_at - right_toggle_enabled_at : right_toggle_enabled_at - left_toggle_enabled_at);
-			        button_diff:integer := (left_button_enabled_at - right_button_enabled_at > 0 ?? left_button_enabled_at - right_button_enabled_at : right_button_enabled_at - left_button_enabled_at);
-			{
-				launch := (left_toggle_enabled and right_toggle_enabled and toggle_diff <= 2000)
-				      and (left_button_enabled and right_button_enabled and button_diff <= 2000)
-			}
-		**};
+			left_toggle_enabled: in parameter DataTypes::boolean;
+			left_toggle_enabled_at: in parameter DataTypes::integer;
+			left_button_enabled: in parameter DataTypes::boolean;
+			left_button_enabled_at: in parameter DataTypes::integer;
+			right_button_enabled: in parameter DataTypes::boolean;
+			right_button_enabled_at: in parameter DataTypes::integer;
+			right_toggle_enabled: in parameter DataTypes::boolean;
+			right_toggle_enabled_at: in parameter DataTypes::integer;
 	end launch_decider_subprogram;
 	
 	--////////////////////////////////////////////////////////////////
@@ -31,54 +20,33 @@ public
 	
 	thread launch_decider_thread
 		features
-			left_toggle_enabled: in data port Base_Types::Boolean;
-			left_toggle_enabled_at: in data port Base_Types::Integer;
-			left_button_enabled: in data port Base_Types::Boolean;
-			left_button_enabled_at: in data port Base_Types::Integer;
-			right_button_enabled: in data port Base_Types::Boolean;
-			right_button_enabled_at: in data port Base_Types::Integer;
-			right_toggle_enabled: in data port Base_Types::Boolean;
-			right_toggle_enabled_at: in data port Base_Types::Integer;
-			launch: out data port Base_Types::Boolean;
+			left_toggle_enabled: in data port DataTypes::boolean;
+			left_toggle_enabled_at: in data port DataTypes::integer;
+			left_button_enabled: in data port DataTypes::boolean;
+			left_button_enabled_at: in data port DataTypes::integer;
+			right_button_enabled: in data port DataTypes::boolean;
+			right_button_enabled_at: in data port DataTypes::integer;
+			right_toggle_enabled: in data port DataTypes::boolean;
+			right_toggle_enabled_at: in data port DataTypes::integer;
 		properties
 			Dispatch_Protocol => Sporadic;
+			Period => 500ms;
 			Compute_Execution_Time => 1ms..500ms;
-		annex agree {**
-			assume "time greater than 0": left_toggle_enabled_at >= 0 and left_button_enabled_at >= 0 and right_button_enabled_at >= 0 and right_toggle_enabled_at >= 0;
-				
-			guarantee "launch will not occur if either button is not active": launch = false or (launch = true and left_button_enabled = true and right_button_enabled = true);
-			guarantee "launch will not occur if either toggle is not active": launch = false or (launch = true and left_toggle_enabled = true and right_toggle_enabled = true);
-			guarantee "launch will not occur if left_toggle and button not active within two seconds": launch = false or (left_button_enabled_at > left_toggle_enabled_at) and left_button_enabled and left_toggle_enabled and (0 <= (left_button_enabled_at - left_toggle_enabled_at) and (left_button_enabled_at - left_toggle_enabled_at) <= 2);
-			guarantee "launch will not occur if right_toggle and button not active within two seconds": launch = false or right_button_enabled and right_toggle_enabled and (0 <= (right_button_enabled_at - right_toggle_enabled_at) and (right_button_enabled_at - right_toggle_enabled_at) <= 2);
-			guarantee "launch will not occur if two sides not activated in time limit": launch = false or (0 <= (left_button_enabled_at - right_button_enabled_at) and (left_button_enabled_at - right_button_enabled_at) <= 2) or (0 <= (right_button_enabled_at - left_button_enabled_at) and (right_button_enabled_at - left_button_enabled_at) <= 2);
-		**};
 	end launch_decider_thread;
 	
 	thread implementation launch_decider_thread.impl
-		--calls M: {
-		--	launch_decider_subprogram: subprogram launch_decider_subprogram;
-		--};
-		--connections
-		--	param1: parameter left_toggle_enabled->launch_decider_subprogram.left_toggle_enabled;
-		--	param2: parameter left_toggle_enabled_at->launch_decider_subprogram.left_toggle_enabled_at;
-		--	param3: parameter left_button_enabled->launch_decider_subprogram.left_button_enabled;
-		--	param4: parameter left_button_enabled_at->launch_decider_subprogram.left_button_enabled_at;
-		--	param5: parameter right_button_enabled->launch_decider_subprogram.right_button_enabled;
-		--	param6: parameter right_button_enabled_at->launch_decider_subprogram.right_button_enabled_at;
-		--	param7: parameter right_toggle_enabled->launch_decider_subprogram.right_toggle_enabled;
-		--	param8: parameter right_toggle_enabled_at->launch_decider_subprogram.right_toggle_enabled_at;
-		--	output1: parameter launch_decider_subprogram.launch->launch;
-		annex agree {**
-			fun abs(x: int) : int = if x < 0 then x * -1 else x;
-			
-			eq leftToggleFlippedFirst: bool = left_toggle_enabled_at < left_button_enabled_at;
-			eq rightToggleFlippedFirst: bool = right_toggle_enabled_at < right_button_enabled_at;
-			eq leftEnabled: bool = left_toggle_enabled and left_button_enabled and leftToggleFlippedFirst and (left_button_enabled_at - left_toggle_enabled_at) <= 2;
-			eq rightEnabled: bool = right_toggle_enabled and right_button_enabled and rightToggleFlippedFirst and (right_button_enabled_at - right_toggle_enabled_at) <= 2;
-			eq enabled: bool = leftEnabled and rightEnabled and abs(right_button_enabled_at - left_button_enabled_at) <= 2;
-			
-			assert launch = enabled;
-		**};
+		calls M: {
+			launch_decider_subprogram: subprogram launch_decider_subprogram;
+		};
+		connections
+			param1: parameter left_toggle_enabled->launch_decider_subprogram.left_toggle_enabled;
+			param2: parameter left_toggle_enabled_at->launch_decider_subprogram.left_toggle_enabled_at;
+			param3: parameter left_button_enabled->launch_decider_subprogram.left_button_enabled;
+			param4: parameter left_button_enabled_at->launch_decider_subprogram.left_button_enabled_at;
+			param5: parameter right_button_enabled->launch_decider_subprogram.right_button_enabled;
+			param6: parameter right_button_enabled_at->launch_decider_subprogram.right_button_enabled_at;
+			param7: parameter right_toggle_enabled->launch_decider_subprogram.right_toggle_enabled;
+			param8: parameter right_toggle_enabled_at->launch_decider_subprogram.right_toggle_enabled_at;
 	end launch_decider_thread.impl;
 	
 	--////////////////////////////////////////////////////////////////
@@ -87,24 +55,14 @@ public
 	
 	process launch_decider_process
 		features
-			left_toggle_enabled: in data port Base_Types::Boolean;
-			left_toggle_enabled_at: in data port Base_Types::Integer;
-			left_button_enabled: in data port Base_Types::Boolean;
-			left_button_enabled_at: in data port Base_Types::Integer;
-			right_button_enabled: in data port Base_Types::Boolean;
-			right_button_enabled_at: in data port Base_Types::Integer;
-			right_toggle_enabled: in data port Base_Types::Boolean;
-			right_toggle_enabled_at: in data port Base_Types::Integer;
-			launch: out data port Base_Types::Boolean;
-		annex agree {**
-			assume "time greater than 0": left_toggle_enabled_at >= 0 and left_button_enabled_at >= 0 and right_button_enabled_at >= 0 and right_toggle_enabled_at >= 0; 
-				
-			guarantee "launch will not occur if either button is not active": launch = false or (launch = true and left_button_enabled = true and right_button_enabled = true);
-			guarantee "launch will not occur if either toggle is not active": launch = false or (launch = true and left_toggle_enabled = true and right_toggle_enabled = true);
-			guarantee "launch will not occur if left_toggle and button not active within two seconds": launch = false or (left_button_enabled_at > left_toggle_enabled_at) and left_button_enabled and left_toggle_enabled and (0 <= (left_button_enabled_at - left_toggle_enabled_at) and (left_button_enabled_at - left_toggle_enabled_at) <= 2);
-			guarantee "launch will not occur if right_toggle and button not active within two seconds": launch = false or right_button_enabled and right_toggle_enabled and (0 <= (right_button_enabled_at - right_toggle_enabled_at) and (right_button_enabled_at - right_toggle_enabled_at) <= 2);
-			guarantee "launch will not occur if two sides not activated in time limit": launch = false or (0 <= (left_button_enabled_at - right_button_enabled_at) and (left_button_enabled_at - right_button_enabled_at) <= 2) or (0 <= (right_button_enabled_at - left_button_enabled_at) and (right_button_enabled_at - left_button_enabled_at) <= 2);
-		**};
+			left_toggle_enabled: in data port DataTypes::boolean;
+			left_toggle_enabled_at: in data port DataTypes::integer;
+			left_button_enabled: in data port DataTypes::boolean;
+			left_button_enabled_at: in data port DataTypes::integer;
+			right_button_enabled: in data port DataTypes::boolean;
+			right_button_enabled_at: in data port DataTypes::integer;
+			right_toggle_enabled: in data port DataTypes::boolean;
+			right_toggle_enabled_at: in data port DataTypes::integer;
 	end launch_decider_process;
 	
 	process implementation launch_decider_process.impl
@@ -119,54 +77,6 @@ public
 			param6: port right_button_enabled_at->launch_decider_thread.right_button_enabled_at;
 			param7: port right_toggle_enabled->launch_decider_thread.right_toggle_enabled;
 			param8: port right_toggle_enabled_at->launch_decider_thread.right_toggle_enabled_at;
-			output1: port launch_decider_thread.launch->launch;
-		annex agree {**
-			lift launch_decider_thread;
-		**};
 	end launch_decider_process.impl;
-	
-	--////////////////////////////////////////////////////////////////
-	--================================================================
-	--\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-	
-	system launch_decider
-		features
-			left_toggle_enabled: in data port Base_Types::Boolean;
-			left_toggle_enabled_at: in data port Base_Types::Integer;
-			left_button_enabled: in data port Base_Types::Boolean;
-			left_button_enabled_at: in data port Base_Types::Integer;
-			right_button_enabled: in data port Base_Types::Boolean;
-			right_button_enabled_at: in data port Base_Types::Integer;
-			right_toggle_enabled: in data port Base_Types::Boolean;
-			right_toggle_enabled_at: in data port Base_Types::Integer;
-			launch: out data port Base_Types::Boolean;
-		annex agree {**
-			assume "time greater than 0": left_toggle_enabled_at >= 0 and left_button_enabled_at >= 0 and right_button_enabled_at >= 0 and right_toggle_enabled_at >= 0;
-				
-			guarantee "launch will not occur if either button is not active": launch = false or (launch = true and left_button_enabled = true and right_button_enabled = true);
-			guarantee "launch will not occur if either toggle is not active": launch = false or (launch = true and left_toggle_enabled = true and right_toggle_enabled = true);
-			guarantee "launch will not occur if left_toggle and button not active within two seconds": launch = false or (left_button_enabled_at > left_toggle_enabled_at) and left_button_enabled and left_toggle_enabled and (0 <= (left_button_enabled_at - left_toggle_enabled_at) and (left_button_enabled_at - left_toggle_enabled_at) <= 2);
-			guarantee "launch will not occur if right_toggle and button not active within two seconds": launch = false or right_button_enabled and right_toggle_enabled and (0 <= (right_button_enabled_at - right_toggle_enabled_at) and (right_button_enabled_at - right_toggle_enabled_at) <= 2);
-			guarantee "launch will not occur if two sides not activated in time limit": launch = false or (0 <= (left_button_enabled_at - right_button_enabled_at) and (left_button_enabled_at - right_button_enabled_at) <= 2) or (0 <= (right_button_enabled_at - left_button_enabled_at) and (right_button_enabled_at - left_button_enabled_at) <= 2);
-		**};
-	end launch_decider;
-	
-	system implementation launch_decider.impl
-		subcomponents
-			launch_decider_process: process launch_decider_process.impl;
-		connections
-			param1: port left_toggle_enabled->launch_decider_process.left_toggle_enabled;
-			param2: port left_toggle_enabled_at->launch_decider_process.left_toggle_enabled_at;
-			param3: port left_button_enabled->launch_decider_process.left_button_enabled;
-			param4: port left_button_enabled_at->launch_decider_process.left_button_enabled_at;
-			param5: port right_button_enabled->launch_decider_process.right_button_enabled;
-			param6: port right_button_enabled_at->launch_decider_process.right_button_enabled_at;
-			param7: port right_toggle_enabled->launch_decider_process.right_toggle_enabled;
-			param8: port right_toggle_enabled_at->launch_decider_process.right_toggle_enabled_at;
-			output1: port launch_decider_process.launch->launch;
-		annex agree {**
-			lift launch_decider_process;
-		**};
-	end launch_decider.impl;
 	
 end LaunchDecider;
